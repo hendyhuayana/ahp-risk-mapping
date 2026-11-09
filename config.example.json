@@ -1,0 +1,18 @@
+{
+  "criteria": [
+    {"name": "rainfall_anomaly", "path": "data/rainfall_anomaly.tif"},
+    {"name": "slope", "path": "data/slope.tif"},
+    {"name": "distance_to_river", "path": "data/distance_to_river.tif", "invert": true},
+    {"name": "soil_saturation", "path": "data/soil_saturation.tif"}
+  ],
+  "pairwise_matrix": [
+    [1, 3, 5, 3],
+    [0.3333, 1, 3, 1],
+    [0.2, 0.3333, 1, 0.3333],
+    [0.3333, 1, 3, 1]
+  ],
+  "n_classes": 5,
+  "classification": "quantile",
+  "output_index": "risk_index.tif",
+  "output_classes": "risk_classes.tif"
+}
