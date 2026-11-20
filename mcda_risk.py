@@ -34,7 +34,9 @@ def ahp_weights(matrix):
     w = w / w.sum()
     lam = float(values[i].real)
     ci = (lam - n) / (n - 1) if n > 2 else 0.0
-    cr = ci / RANDOM_INDEX[n] if RANDOM_INDEX.get(n) else 0.0
+    if n > max(RANDOM_INDEX):
+        raise ValueError(f"Saaty's random index is only tabulated up to n = {max(RANDOM_INDEX)} criteria")
+    cr = ci / RANDOM_INDEX[n] if RANDOM_INDEX[n] else 0.0
     return w, lam, ci, cr
 
 
@@ -88,10 +90,11 @@ def report(names, weights, lam, ci, cr):
           "WARNING: CR >= 0.10, review the pairwise judgements")
 
 
-def summary(classes):
+def summary(classes, n_classes=5):
     valid = classes[~np.isnan(classes)]
+    names = CLASS_NAMES if n_classes == 5 else [f"Class {k}" for k in range(1, n_classes + 1)]
     print("Area share by class")
-    for k, name in enumerate(CLASS_NAMES, start=1):
+    for k, name in enumerate(names, start=1):
         print(f"  {name:<10} {np.mean(valid == k) * 100:5.1f} %")
 
 
@@ -136,6 +139,9 @@ def run_config(path):
     with open(path, encoding="utf-8") as f:
         cfg = json.load(f)
     names = [c["name"] for c in cfg["criteria"]]
+    if len(names) != len(cfg["pairwise_matrix"]):
+        raise ValueError(f"{len(names)} criteria but the pairwise matrix is "
+                         f"{len(cfg['pairwise_matrix'])}x{len(cfg['pairwise_matrix'])}")
     w, lam, ci, cr = ahp_weights(cfg["pairwise_matrix"])
     report(names, w, lam, ci, cr)
     layers, profile = [], None
@@ -143,14 +149,18 @@ def run_config(path):
         arr, prof = read_raster(c["path"])
         if profile is None:
             profile = prof
-        elif arr.shape != (profile["height"], profile["width"]):
-            raise ValueError(f"{c['path']} is not aligned with the first raster")
+        elif (arr.shape != (profile["height"], profile["width"])
+              or prof["crs"] != profile["crs"]
+              or not prof["transform"].almost_equals(profile["transform"])):
+            raise ValueError(f"{c['path']} is not aligned with the first raster "
+                             "(extent, resolution and CRS must match)")
         layers.append(normalize(arr, c.get("invert", False)))
     index = weighted_overlay(layers, w)
-    classes = classify(index, cfg.get("n_classes", 5), cfg.get("classification", "quantile"))
+    n_classes = cfg.get("n_classes", 5)
+    classes = classify(index, n_classes, cfg.get("classification", "quantile"))
     write_raster(cfg.get("output_index", "risk_index.tif"), index, profile)
     write_raster(cfg.get("output_classes", "risk_classes.tif"), classes, profile)
-    summary(classes)
+    summary(classes, n_classes)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,5 @@
+__pycache__/
+*.tif
+/demo_risk.png
+config.json
+data/
