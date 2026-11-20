@@ -18,7 +18,7 @@ I built it while working on multicriteria risk assessments for El Niño events, 
 ## Quick start
 
 ```bash
-pip install numpy matplotlib
+pip install -r requirements.txt
 python mcda_risk.py --demo
 ```
 
@@ -34,6 +34,10 @@ lambda_max = 4.043  CI = 0.014  CR = 0.016
 Consistency OK (CR < 0.10)
 ```
 
+and saves the classified map:
+
+![Demo risk map](docs/demo_risk.png)
+
 ## Using your own rasters
 
 ```bash
@@ -42,7 +46,7 @@ cp config.example.json config.json   # edit paths and matrix
 python mcda_risk.py --config config.json
 ```
 
-All rasters must share the same extent, resolution and CRS.
+All rasters must share the same extent, resolution and CRS; the script stops with an error if they do not. The number of criteria must match the size of the pairwise matrix (up to 10 criteria, the limit of Saaty's random index table).
 
 ## Notes
 
